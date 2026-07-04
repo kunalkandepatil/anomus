@@ -126,12 +126,14 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ onSubmit }) => {
         <button
           className="wizard-back-btn"
           onClick={step === 0 ? undefined : goBack}
-          style={{ opacity: step === 0 ? 0 : 1, pointerEvents: step === 0 ? 'none' : 'auto' }}
+          style={{ opacity: step === 0 ? 0.5 : 1, pointerEvents: step === 0 ? 'none' : 'auto' }}
           aria-label="Previous question"
         >
           <ArrowLeft size={14} />
           Back
         </button>
+
+        <span className="wizard-step-count">{step + 1} / {total}</span>
 
         <div className="wizard-step-tracker">
           {STEPS.map((_, i) => (
@@ -141,8 +143,6 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ onSubmit }) => {
             />
           ))}
         </div>
-
-        <span className="wizard-step-count">{step + 1} / {total}</span>
       </div>
 
       {/* ── Step content ── */}

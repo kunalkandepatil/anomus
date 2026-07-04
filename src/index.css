@@ -1177,6 +1177,7 @@ body::before {
   cursor: pointer;
   padding: 0;
   transition: color 0.2s ease;
+  flex-shrink: 0;
 }
 
 .wizard-back-btn:hover {
@@ -1187,11 +1188,17 @@ body::before {
   display: flex;
   gap: 6px;
   align-items: center;
+  flex: 1;
+  justify-content: flex-start;
+  min-width: 0;
+  margin: 0 0.5rem;
 }
 
 .wizard-tick {
   height: 3px;
-  width: 22px;
+  flex: 1;
+  max-width: 22px;
+  min-width: 3px;
   border-radius: 99px;
   background: rgba(255, 255, 255, 0.08);
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1199,7 +1206,9 @@ body::before {
 
 .wizard-tick.active {
   background: var(--brand-red);
-  width: 32px;
+  flex: 1.5;
+  max-width: 32px;
+  min-width: 8px;
   box-shadow: 0 0 8px rgba(var(--brand-red-rgb), 0.45);
 }
 
@@ -1213,6 +1222,7 @@ body::before {
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--text-subtle);
+  flex-shrink: 0;
 }
 
 /* ── Step content ── */
@@ -1497,6 +1507,29 @@ body::before {
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+.wizard-skip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.85rem 1.6rem;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  letter-spacing: -0.01em;
+}
+
+.wizard-skip:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: var(--text-main);
 }
 
 /* ── Success and Error cards ── */
