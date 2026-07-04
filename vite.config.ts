@@ -22,5 +22,8 @@ export default defineConfig({
       },
     },
   },
+  preview: {
+    allowedHosts: ['anomus.unbrn.tech'],
+  },
 });
 
