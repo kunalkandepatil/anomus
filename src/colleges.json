@@ -1,0 +1,32 @@
+[
+  {
+    "id": "jspm",
+    "shortName": "JSPM",
+    "fullName": "JSPM University Pune",
+    "color": "#2fd420",
+    "tools": [
+      {
+        "id": "internship-ppt-creator",
+        "name": "Internship PPT Creator",
+        "description": "Let anomus cook your PPT. Zero prep required.",
+        "tags": [
+          "JSPM",
+          "PPT"
+        ],
+        "path": "/jspm/internship-ppt-creator",
+        "status": "live"
+      },
+      {
+        "id": "internship-report-creator",
+        "name": "Internship Report Creator",
+        "description": "Let anomus cook your report. Zero effort required.",
+        "tags": [
+          "JSPM",
+          "DOCX"
+        ],
+        "path": "/jspm/internship-report-creator",
+        "status": "live"
+      }
+    ]
+  }
+]
