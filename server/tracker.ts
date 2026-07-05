@@ -6,6 +6,15 @@ const TRACKER_FILE = path.join(process.cwd(), 'server', 'generated.json');
 // Concurrency queue to prevent race conditions during concurrent write operations
 let writeQueue = Promise.resolve();
 
+export async function getGenerationStats() {
+  try {
+    const content = await fs.readFile(TRACKER_FILE, 'utf-8');
+    return JSON.parse(content);
+  } catch (err) {
+    return { ppt: 0, report: 0, total: 0 };
+  }
+}
+
 export async function incrementGenerationCount(type: 'ppt' | 'report') {
   // Chain the operations sequentially to guarantee event-loop safety
   writeQueue = writeQueue.then(async () => {

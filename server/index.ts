@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import { internshipGeneratorRouter } from './tools/jspm/internship-ppt-creator/router.js';
 import { internshipReportRouter } from './tools/jspm/internship-report-creator/router.js';
+import { getRateLimit } from './middleware.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
@@ -18,6 +19,9 @@ app.use((req, res, next) => {
   }
   next();
 });
+
+// ─── Stats / Rate Limit Endpoint ───────────────────────────────────
+app.get('/api/stats', getRateLimit);
 
 // ─── Tool-Scoped Private API Routes ──────────────────────────────────────────
 // Each tool is mapped to its matching route path.

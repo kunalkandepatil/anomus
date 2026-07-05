@@ -1123,7 +1123,7 @@ body::before {
 .wizard-home-back {
   position: absolute;
   top: 2rem;
-  left: 2rem;
+  left: max(1.5rem, calc(50% - 450px + 1.5rem));
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1148,11 +1148,12 @@ body::before {
 /* ── Shell ── */
 .wizard-shell {
   width: 100%;
-  max-width: 620px;
+  max-width: 900px;
   display: flex;
   flex-direction: column;
   gap: 3.5rem;
   z-index: 2;
+  padding: 0 1.5rem;
 }
 
 /* ── Nav bar ── */
@@ -1650,6 +1651,7 @@ body::before {
 
   .wizard-shell {
     gap: 2rem;
+    padding: 0;
   }
 
   .wizard-step {
@@ -1737,4 +1739,67 @@ body::before {
   font-size: 0.85rem;
   color: var(--brand-red);
   font-weight: 500;
+}
+
+/* ===== Top Header & Stats Pill ===== */
+.top-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.header-left, .header-right {
+  display: flex;
+  align-items: center;
+  pointer-events: auto;
+}
+
+.header-logo {
+  font-family: var(--font-sans);
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-main);
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.header-logo:hover {
+  opacity: 0.8;
+}
+
+.logo-dot {
+  color: var(--brand-red);
+}
+
+.stats-text-simple {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+@media (max-width: 768px) {
+  .top-header {
+    padding: 0 1.25rem;
+    height: 4.5rem;
+  }
+  
+  .header-logo {
+    font-size: 1.25rem;
+  }
+  
+  .stats-text-simple {
+    font-size: 0.75rem;
+  }
 }
