@@ -7,17 +7,21 @@ const ipCache = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_WINDOW = 12 * 60 * 60 * 1000; // 12 hours
 const MAX_REQUESTS = 3; // 3 generations per 12 hours
 const IP_LIMITS_FILE = path.join(process.cwd(), 'server', 'ip_limits.json');
+let writeQueue = Promise.resolve();
 
 const saveIpCacheToFile = () => {
-  try {
-    const data: Record<string, { count: number; resetTime: number }> = {};
-    for (const [ip, record] of ipCache.entries()) {
-      data[ip] = record;
+  // Chain write operations sequentially to prevent race conditions and event-loop blocks
+  writeQueue = writeQueue.then(async () => {
+    try {
+      const data: Record<string, { count: number; resetTime: number }> = {};
+      for (const [ip, record] of ipCache.entries()) {
+        data[ip] = record;
+      }
+      await fs.promises.writeFile(IP_LIMITS_FILE, JSON.stringify(data, null, 2), 'utf-8');
+    } catch (error) {
+      console.error('[RateLimiter] Failed to save ipCache to file:', error);
     }
-    fs.writeFileSync(IP_LIMITS_FILE, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (error) {
-    console.error('[RateLimiter] Failed to save ipCache to file:', error);
-  }
+  });
 };
 
 const loadIpCacheFromFile = () => {

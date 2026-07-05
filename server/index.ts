@@ -35,6 +35,28 @@ app.get('/api/global-stats', async (req, res) => {
   }
 });
 
+app.post('/api/log', async (req, res) => {
+  try {
+    const webhookUrl = process.env.DISCORD_WEBHOOK_URL || 'https://discord.com/api/webhooks/1523045018464551122/CTGHA2es7TKCPGiyaWbdgzjAimmWB6PWkUyKeXKg7BSM1Z9Rsl4tf4l763dP-r4I73sv';
+    
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body)
+    });
+
+    if (!response.ok) {
+      console.warn(`[Log Proxy] Discord returned non-ok status: ${response.status}`);
+    }
+
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('[Log Proxy] Failed to proxy log to Discord:', error);
+    res.status(500).json({ error: 'Failed to send log to Discord' });
+  }
+});
+
+
 // ─── Tool-Scoped Private API Routes ──────────────────────────────────────────
 // Each tool is mapped to its matching route path.
 app.use('/api/jspm/internship-ppt-creator', internshipGeneratorRouter);

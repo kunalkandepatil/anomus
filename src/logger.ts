@@ -1,4 +1,3 @@
-const LOG_WEBHOOK_URL = 'https://discord.com/api/webhooks/1523045018464551122/CTGHA2es7TKCPGiyaWbdgzjAimmWB6PWkUyKeXKg7BSM1Z9Rsl4tf4l763dP-r4I73sv';
 
 export interface LogData {
   toolName: string;
@@ -45,7 +44,7 @@ export async function logToDiscord(data: LogData) {
       ]
     };
 
-    await fetch(LOG_WEBHOOK_URL, {
+    await fetch('/api/log', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)

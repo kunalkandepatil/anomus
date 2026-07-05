@@ -7,10 +7,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Resolve template path relative to project root (5 levels up from this file)
 const TEMPLATE_PATH = path.resolve(__dirname, '../../../../../template/Internship_Report_Format.docx');
 
+let _templateBytes: Buffer | null = null;
+
 // ─── Load template ─────────────────────────────────────────────────────────────
 export async function unzipReportTemplate(): Promise<JSZip> {
-  const buffer = fs.readFileSync(TEMPLATE_PATH);
-  return JSZip.loadAsync(buffer);
+  if (!_templateBytes) {
+    _templateBytes = fs.readFileSync(TEMPLATE_PATH);
+  }
+  return JSZip.loadAsync(_templateBytes);
 }
 
 // ─── Re-zip to buffer ──────────────────────────────────────────────────────────
