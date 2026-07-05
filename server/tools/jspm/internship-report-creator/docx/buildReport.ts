@@ -11,6 +11,7 @@ import {
   slugify,
   makeParagraph,
   makeImageParagraph,
+  processTextParagraph,
 } from './xmlUtils.js';
 
 function romanize(num: number): string {
@@ -76,20 +77,23 @@ function buildContentsTable(modules: { title: string }[], hasCertificate: boolea
   const rows: string[] = [];
   rows.push(makeTableRow('Sr. No.', 'Particulars', 'Page No.'));
   rows.push(makeTableRow('1.', 'Introduction', String(startPage)));
-  rows.push(makeTableRow('2.', 'Methods and Techniques', String(startPage + 1)));
+  // Introduction spans 2 pages, so Methods and Techniques starts at startPage + 2
+  rows.push(makeTableRow('2.', 'Methods and Techniques', String(startPage + 2)));
   
   const M = modules.length;
   modules.forEach((mod, idx) => {
     const num = idx + 1;
     const itemNum = idx + 3;
     const title = `Module ${romanize(num)}: ${mod.title}`;
-    const pageNum = String(startPage + 1 + num);
+    // Shifted page number calculation due to 2-page Introduction
+    const pageNum = String(startPage + 2 + num);
     rows.push(makeTableRow(`${itemNum}.`, title, pageNum));
   });
   
-  rows.push(makeTableRow(`${M + 3}.`, 'Results and Discussion', String(startPage + 2 + M)));
-  rows.push(makeTableRow(`${M + 4}.`, 'Conclusion', String(startPage + 3 + M)));
-  rows.push(makeTableRow(`${M + 5}.`, 'References', String(startPage + 4 + M)));
+  // Shifted page numbers due to 2-page Introduction
+  rows.push(makeTableRow(`${M + 3}.`, 'Results and Discussion', String(startPage + 3 + M)));
+  rows.push(makeTableRow(`${M + 4}.`, 'Conclusion', String(startPage + 4 + M)));
+  rows.push(makeTableRow(`${M + 5}.`, 'References', String(startPage + 5 + M)));
   
   return `<w:tbl>
     <w:tblPr>
@@ -309,7 +313,7 @@ function replaceContentSection(
   const pStart = xml.lastIndexOf('<w:p ', idx);
   const pEnd = xml.indexOf('</w:p>', idx) + '</w:p>'.length;
 
-  const content = paragraphs.map(p => makeBodyParagraph(p)).join('');
+  const content = paragraphs.map(p => processTextParagraph(p)).join('');
   const headingStart = addPageBreak ? xml.lastIndexOf('<w:p ', pStart - 1) : -1;
 
   xml = xml.slice(0, pStart) + content + xml.slice(pEnd);
@@ -443,7 +447,7 @@ export async function buildReport(
     console.log(`[buildReport] Inserting ${mod.title} (Module ${i + 1})...`);
     // Build: module sub-heading + paragraphs
     const titlePara = makeSectionTitle(mod.title);
-    const bodyParas = mod.paragraphs.map(p => makeBodyParagraph(p)).join('');
+    const bodyParas = mod.paragraphs.map(p => processTextParagraph(p)).join('');
     const escaped = escapeXml(placeholder);
     let idx = xml.indexOf(`<w:t>${escaped}</w:t>`);
     if (idx === -1) idx = xml.indexOf(`<w:t>${placeholder}</w:t>`);
@@ -489,7 +493,7 @@ export async function buildReport(
         const mainHeadingPara = `<w:p><w:pPr><w:pStyle w:val="Heading1"/><w:spacing w:before="300" w:after="200"/><w:pageBreakBefore/></w:pPr><w:r><w:rPr><w:b/><w:bCs/><w:color w:val="000000"/><w:sz w:val="28"/><w:szCs w:val="28"/></w:rPr><w:t>${mainHeading}</w:t></w:r></w:p>`;
         
         const titlePara = makeSectionTitle(mod.title);
-        const bodyParas = mod.paragraphs.map(p => makeBodyParagraph(p)).join('');
+        const bodyParas = mod.paragraphs.map(p => processTextParagraph(p)).join('');
         
         xml = xml.slice(0, headingStart) + mainHeadingPara + titlePara + bodyParas + xml.slice(headingStart);
       }

@@ -7,6 +7,7 @@ import { getRateLimit } from './middleware.js';
 import { getGenerationStats } from './tracker.js';
 
 const app = express();
+app.set('trust proxy', true);
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
 
 app.use(cors({ origin: 'http://localhost:5173' }));

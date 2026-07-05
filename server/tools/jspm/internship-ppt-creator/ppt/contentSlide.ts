@@ -18,7 +18,12 @@ const BUDGET_BY_FONT_SIZE: Record<number, number> = {
 export function estimateVirtualLines(bullets: string[], fontSize: 20 | 18 | 16): number {
   const cpl = CHARS_PER_LINE[fontSize];
   return bullets.reduce((sum, b) => {
-    const textLines = Math.ceil(b.length / cpl);
+    if (b === 'Advantages' || b === 'Limitations') {
+      const extraSpacing = b === 'Limitations' ? 1.0 : 0.0;
+      return sum + 1.0 + extraSpacing;
+    }
+    const cleanText = b.startsWith('- ') ? b.substring(2) : b;
+    const textLines = Math.ceil(cleanText.length / cpl);
     return sum + textLines + SPACING_LINES_PER_BULLET;
   }, 0);
 }
@@ -70,10 +75,16 @@ function buildContentSlideXml(title: string, bullets: string[], fontSize: 20 | 1
   const contentHeight = isTwoLineTitle ? 4062232 : 4529592;
 
   const bulletParas = bullets
-    .map(
-      (b) =>
-        `<a:p><a:pPr marL="571500" indent="-571500" algn="just"><a:buFont typeface="Arial" panose="020B0604020202020204" pitchFamily="34" charset="0"/><a:buChar char="•"/></a:pPr><a:r><a:rPr lang="en-US" sz="${sz}" dirty="0"><a:latin typeface="Times New Roman" panose="02020603050405020304" pitchFamily="18" charset="0"/><a:cs typeface="Times New Roman" panose="02020603050405020304" pitchFamily="18" charset="0"/></a:rPr><a:t>${escapeXml(b)}</a:t></a:r></a:p>`,
-    )
+    .map((b) => {
+      if (b === 'Advantages' || b === 'Limitations') {
+        const spacingMarkup = b === 'Limitations' ? '<a:p><a:pPr marL="0" indent="0"><a:buNone/></a:pPr></a:p>' : '';
+        const headingPara = `<a:p><a:pPr marL="0" indent="0" algn="l"><a:buNone/></a:pPr><a:r><a:rPr lang="en-US" sz="${sz}" b="1" dirty="0"><a:latin typeface="Times New Roman" panose="02020603050405020304" pitchFamily="18" charset="0"/><a:cs typeface="Times New Roman" panose="02020603050405020304" pitchFamily="18" charset="0"/></a:rPr><a:t>${escapeXml(b)}</a:t></a:r></a:p>`;
+        return spacingMarkup + headingPara;
+      }
+      
+      const cleanText = b.startsWith('- ') ? b.substring(2) : b;
+      return `<a:p><a:pPr marL="571500" indent="-571500" algn="just"><a:buFont typeface="Arial" panose="020B0604020202020204" pitchFamily="34" charset="0"/><a:buChar char="•"/></a:pPr><a:r><a:rPr lang="en-US" sz="${sz}" dirty="0"><a:latin typeface="Times New Roman" panose="02020603050405020304" pitchFamily="18" charset="0"/><a:cs typeface="Times New Roman" panose="02020603050405020304" pitchFamily="18" charset="0"/></a:rPr><a:t>${escapeXml(cleanText)}</a:t></a:r></a:p>`;
+    })
     .join('');
 
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>

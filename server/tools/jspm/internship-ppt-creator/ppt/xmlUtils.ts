@@ -90,3 +90,57 @@ export function slugify(str: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 }
+
+export async function updateAppProps(zip: JSZip, slideTitles: string[]): Promise<void> {
+  const totalSlides = slideTitles.length;
+  const vectorSize = 7 + totalSlides; // 6 fonts + 1 theme + N slide titles
+  
+  const fontsAndTheme = [
+    'Aptos',
+    'Aptos Display',
+    'Arial',
+    'Calibri',
+    'Cambria',
+    'Times New Roman',
+    'Office Theme'
+  ];
+
+  const partItems = [
+    ...fontsAndTheme.map(f => `<vt:lpstr>${escapeXml(f)}</vt:lpstr>`),
+    ...slideTitles.map(t => `<vt:lpstr>${escapeXml(t)}</vt:lpstr>`)
+  ].join('');
+
+  const appXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
+  <TotalTime>3874</TotalTime>
+  <Words>80</Words>
+  <Application>Microsoft Office PowerPoint</Application>
+  <PresentationFormat>Widescreen</PresentationFormat>
+  <Paragraphs>20</Paragraphs>
+  <Slides>${totalSlides}</Slides>
+  <Notes>1</Notes>
+  <HiddenSlides>0</HiddenSlides>
+  <MMClips>0</MMClips>
+  <ScaleCrop>false</ScaleCrop>
+  <HeadingPairs>
+    <vt:vector size="6" baseType="variant">
+      <vt:variant><vt:lpstr>Fonts Used</vt:lpstr></vt:variant>
+      <vt:variant><vt:i4>6</vt:i4></vt:variant>
+      <vt:variant><vt:lpstr>Theme</vt:lpstr></vt:variant>
+      <vt:variant><vt:i4>1</vt:i4></vt:variant>
+      <vt:variant><vt:lpstr>Slide Titles</vt:lpstr></vt:variant>
+      <vt:variant><vt:i4>${totalSlides}</vt:i4></vt:variant>
+    </vt:vector>
+  </HeadingPairs>
+  <TitlesOfParts>
+    <vt:vector size="${vectorSize}" baseType="lpstr">${partItems}</vt:vector>
+  </TitlesOfParts>
+  <Company></Company>
+  <LinksUpToDate>false</LinksUpToDate>
+  <SharedDoc>false</SharedDoc>
+  <HyperlinksChanged>false</HyperlinksChanged>
+  <AppVersion>16.0000</AppVersion>
+</Properties>`;
+
+  zip.file('docProps/app.xml', appXml.replace(/\n\s*/g, ''));
+}

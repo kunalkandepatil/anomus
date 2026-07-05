@@ -33,6 +33,48 @@ export function escapeXml(str: string): string {
     .replace(/'/g, '&apos;');
 }
 
+/** Parse inline **bold** text into w:r runs, applying base properties if any */
+export function textToRuns(text: string, baseRPrParts: string[] = []): string {
+  const regex = /\*\*([^*]+)\*\*/g;
+  let lastIndex = 0;
+  let match;
+  const runs: string[] = [];
+
+  const getRPr = (isBoldMatch: boolean) => {
+    const parts = [...baseRPrParts];
+    if (isBoldMatch) {
+      if (!parts.includes('<w:b/><w:bCs/>')) {
+        parts.push('<w:b/><w:bCs/>');
+      }
+    }
+    return parts.length ? `<w:rPr>${parts.join('')}</w:rPr>` : '';
+  };
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      const normalText = text.substring(lastIndex, match.index);
+      const needsPreserve = normalText.startsWith(' ') || normalText.endsWith(' ');
+      const tAttrib = needsPreserve ? ' xml:space="preserve"' : '';
+      runs.push(`<w:r>${getRPr(false)}<w:t${tAttrib}>${escapeXml(normalText)}</w:t></w:r>`);
+    }
+    const boldText = match[1];
+    const needsPreserve = boldText.startsWith(' ') || boldText.endsWith(' ');
+    const tAttrib = needsPreserve ? ' xml:space="preserve"' : '';
+    runs.push(`<w:r>${getRPr(true)}<w:t${tAttrib}>${escapeXml(boldText)}</w:t></w:r>`);
+    
+    lastIndex = regex.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    const normalText = text.substring(lastIndex);
+    const needsPreserve = normalText.startsWith(' ') || normalText.endsWith(' ');
+    const tAttrib = needsPreserve ? ' xml:space="preserve"' : '';
+    runs.push(`<w:r>${getRPr(false)}<w:t${tAttrib}>${escapeXml(normalText)}</w:t></w:r>`);
+  }
+
+  return runs.join('');
+}
+
 /** Build a standard body paragraph `<w:p>` with given text and optional formatting. */
 export function makeParagraph(text: string, opts: {
   bold?: boolean;
@@ -49,7 +91,6 @@ export function makeParagraph(text: string, opts: {
   if (opts.italic)    rPrParts.push('<w:i/><w:iCs/>');
   if (opts.underline) rPrParts.push('<w:u w:val="single"/>');
   if (opts.fontSize)  rPrParts.push(`<w:sz w:val="${opts.fontSize}"/><w:szCs w:val="${opts.fontSize}"/>`);
-  const rPr = rPrParts.length ? `<w:rPr>${rPrParts.join('')}</w:rPr>` : '';
 
   const pPrParts: string[] = [];
   const spacing: string[] = [];
@@ -60,11 +101,7 @@ export function makeParagraph(text: string, opts: {
   if (opts.pageBreakBefore) pPrParts.push('<w:pageBreakBefore/>');
   const pPr = pPrParts.length ? `<w:pPr>${pPrParts.join('')}</w:pPr>` : '';
 
-  const safeText = escapeXml(text);
-  const needsPreserve = text.startsWith(' ') || text.endsWith(' ');
-  const tAttrib = needsPreserve ? ' xml:space="preserve"' : '';
-
-  return `<w:p>${pPr}<w:r>${rPr}<w:t${tAttrib}>${safeText}</w:t></w:r></w:p>`;
+  return `<w:p>${pPr}${textToRuns(text, rPrParts)}</w:p>`;
 }
 
 /** Build a section heading paragraph (bold, underlined, centered, 15pt ≈ sz30). */
@@ -90,12 +127,44 @@ export function makeSectionTitle(text: string, pageBreakBefore: boolean = false)
 
 /** Build a plain body paragraph (justified, 12pt = sz24, 1.5 line = spacing 360). */
 export function makeBodyParagraph(text: string): string {
-  return `<w:p><w:pPr><w:spacing w:after="160"/><w:jc w:val="both"/></w:pPr><w:r><w:t xml:space="preserve">${escapeXml(text)}</w:t></w:r></w:p>`;
+  return `<w:p><w:pPr><w:spacing w:after="160"/><w:jc w:val="both"/></w:pPr>${textToRuns(text)}</w:p>`;
 }
 
 /** Build a bullet / numbered list paragraph for References. */
 export function makeListItem(text: string): string {
-  return `<w:p><w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr><w:spacing w:after="140"/></w:pPr><w:r><w:t xml:space="preserve">${escapeXml(text)}</w:t></w:r></w:p>`;
+  return `<w:p><w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr><w:spacing w:after="140"/></w:pPr>${textToRuns(text)}</w:p>`;
+}
+
+/** Parse paragraph content split by newlines, handling subheadings, bullet items, and plain prose */
+export function processTextParagraph(paragraphText: string): string {
+  const lines = paragraphText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const xmlParts: string[] = [];
+
+  for (const line of lines) {
+    if (line.startsWith('### ') || line.startsWith('#### ')) {
+      // Subheading
+      const headingText = line.replace(/^(###|####)\s+/, '');
+      xmlParts.push(makeParagraph(headingText, {
+        bold: true,
+        fontSize: 24, // 12pt
+        spaceBefore: 160,
+        spaceAfter: 80,
+      }));
+    } else if (line.startsWith('- ') || line.startsWith('* ') || line.startsWith('• ') || line.startsWith('+ ')) {
+      // List item
+      const itemText = line.replace(/^([-\*•\+])\s+/, '');
+      xmlParts.push(makeListItem(itemText));
+    } else if (/^\d+\.\s+/.test(line)) {
+      // Numbered list item
+      const itemText = line.replace(/^\d+\.\s+/, '');
+      xmlParts.push(makeListItem(itemText));
+    } else {
+      // Normal body paragraph
+      xmlParts.push(makeBodyParagraph(line));
+    }
+  }
+
+  return xmlParts.join('');
 }
 /** Build a page break paragraph. */
 export function makePageBreak(): string {

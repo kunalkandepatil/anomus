@@ -1,5 +1,5 @@
 import type { FormInput, Section } from '../types.js';
-import { unzipTemplate, insertSlide, rezip } from './xmlUtils.js';
+import { unzipTemplate, insertSlide, rezip, updateAppProps } from './xmlUtils.js';
 import { buildTitleSlide } from './titleSlide.js';
 import { buildTocSlide } from './tocSlide.js';
 import { buildContentSlides } from './contentSlide.js';
@@ -35,8 +35,10 @@ export function toSections(outline: AIOutline): Section[] {
       title: 'Advantages & Limitations',
       kind: 'adv_lim' as const,
       bullets: [
-        ...outline.advantages.map((a) => `✓ ${a}`),
-        ...outline.limitations.map((l) => `✗ ${l}`),
+        'Advantages',
+        ...outline.advantages.map((a) => `- ${a}`),
+        'Limitations',
+        ...outline.limitations.map((l) => `- ${l}`),
       ],
     },
     { title: 'Conclusion', kind: 'conclusion' as const, bullets: outline.conclusion },
@@ -103,6 +105,15 @@ export async function buildDeck(input: FormInput, outline: AIOutline): Promise<B
       presXmlAfter.replace('</p:sldIdLst>', `${thankYouEntry}</p:sldIdLst>`),
     );
   }
+
+  // 5.5 Update app properties (docProps/app.xml) with correct slide count and titles
+  const slideTitles: string[] = [
+    input.internshipTitle || 'PowerPoint Presentation',
+    'Table of Contents',
+    ...slideDescriptors.map(desc => desc.descriptor.title),
+    'Thank You'
+  ];
+  await updateAppProps(zip, slideTitles);
 
   console.log('[buildDeck] Packaging and re-zipping deck archive...');
   const buffer = await rezip(zip);

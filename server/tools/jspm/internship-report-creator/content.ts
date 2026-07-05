@@ -65,25 +65,42 @@ Student Details:
 - Company: ${companyName}
 ${guideInfo ? `${guideInfo}\n` : ''}
 
-Generate the full, detailed, academic internship report content as JSON based on your deep technical knowledge of the internship domain/title: "${internshipDomain}". Follow these rules strictly:
+Generate the full, detailed, academic internship report content as JSON based on your deep technical knowledge of the internship domain/title: "${internshipDomain}". Follow these rules strictly to ensure the report looks authentic, highly detailed, and "hand-made" (not like a generic blocky wall of AI prose):
 
-1. **abstract**: Exactly ~150 words. Single prose paragraph. Cover purpose, tasks, methods, key results, and conclusion. No bullets.
+1. **Formatting Rules (use within JSON string values)**:
+   - **Bolding**: Highlight important software tools, programming languages, files, metrics, algorithms, database terms, or findings by wrapping them in double asterisks: **key term** (e.g., **React.js**, **Docker**, **94% accuracy**).
+   - **Lists**: Present features, steps, advantages, or deliverables using bullet points starting with a hyphen and a space on a new line:
+     - First bullet item
+     - Second bullet item
+   - **Subheadings**: Organize sections into smaller logical topics by putting a subheading starting with ### on a new line:
+     ### Subheading Title
+   - **Aesthetics**: Avoid perfectly uniform blocky paragraphs. Vary paragraph lengths and mix normal prose paragraphs with subheadings and bullet lists to make the report look naturally structured and hand-made.
 
-2. **acknowledgement**: ~250–350 words (roughly 1 page). Single prose block. Thank the university (JSPM University, Pune), school (${schoolName}), ${thankGuides ? `${thankGuides}, ` : ''}company (${companyName}), and family. First person, sincere tone. Written by ${studentName}.
+2. **abstract**: Exactly ~150 words. Single prose paragraph. Cover purpose, tasks, methods, key results, and conclusion. Do NOT use any bolding, subheadings, or lists in this section.
 
-3. **introduction**: 3–4 paragraphs. Cover the organization/company background, the domain of the internship, its scope, and the objectives. Each paragraph 100–130 words. Make this highly specific to "${internshipDomain}".
+3. **acknowledgement**: ~250–350 words (roughly 1 page). Single prose block. Sincere tone. Thank the university (JSPM University, Pune), school (${schoolName}), ${thankGuides ? `${thankGuides}, ` : ''}company (${companyName}), and family. First person. Written by ${studentName}. Do NOT use any bolding, subheadings, or lists here.
 
-4. **methodsAndTechniques**: 3 paragraphs. Describe the methods, tools, technologies, and techniques used during the internship. Each paragraph 100–120 words. Make this highly specific to "${internshipDomain}".
+4. **introduction**: 6–8 detailed, comprehensive paragraph blocks (spanning exactly 2 pages, total of 700–900 words). Must cover: (a) Organization/Company background and industry context, (b) Overview and significance of the internship domain, (c) Detailed scope of the work/project, and (d) Internship objectives. Must include at least two subheadings (e.g., ### Company Profile, ### Internship Objectives) and a structured bulleted list of objectives. Use bolding to highlight key terms.
 
-5. **modules**: Exactly 5 or 6 modules representing key chronological stages of the internship. Each module has a short descriptive title (2–5 words, NOT "Module 1/2/3") and exactly 3 paragraphs of detailed technical content describing what was done in that module. Each paragraph 100–120 words.
+5. **methodsAndTechniques**: 3 paragraph blocks. Describe the methods, tools, technologies, and techniques used. Include a subheading (e.g., ### Technical Stack and Frameworks) followed by a bulleted list of the tools with bolded names and brief descriptions (e.g., - **Vite**: Used as the frontend build tool...).
 
-6. **resultsAndDiscussion**: 3 paragraphs. Present outcomes, achievements, skills developed, and observations. Each paragraph 100–120 words.
+6. **modules**: Exactly 5 or 6 modules representing key chronological stages of the internship. Each module has a short descriptive title (2–5 words, NOT "Module 1/2/3") and exactly 5 detailed paragraph/content blocks.
+   - To make it look hand-made, do not write plain paragraphs.
+   - For each module, generate exactly 5 blocks:
+     - Block 1: A highly detailed, normal descriptive paragraph detailing the objectives, planning, and tasks of the module, mentioning specific software design patterns, files, and functions using bolding (approx. 120–150 words).
+     - Block 2: A subheading (e.g., ### Configuration and Environment Setup, or ### Installation Checklist) followed by a detailed, step-by-step bulleted/numbered configuration or implementation checklist.
+     - Block 3: A dense, technical paragraph detailing the core implementation, outlining the logic, algorithms, databases, libraries, API endpoints, or protocols utilized (approx. 120–150 words).
+     - Block 4: A paragraph explaining the validation, testing, debugging, or optimization procedures conducted, highlighting how errors were handled and verified (approx. 100–120 words).
+     - Block 5: A final paragraph detailing the integration, deliverables, and concrete outcomes/achievements of the module, linking it to the overall project (approx. 100–120 words).
+   - Be extremely technical and specific to "${internshipDomain}". Mention actual API paths, configuration parameters, database models, or components where relevant.
 
-7. **conclusion**: 3 paragraphs. Summarize the internship experience, key takeaways, and future directions. Each paragraph 80–100 words.
+7. **resultsAndDiscussion**: 3 paragraph/content blocks. Present outcomes, achievements, skills developed, and observations. Include a subheading (e.g., ### Key Findings and Performance Metrics) followed by a list of 3-5 specific bullet points detailing actual metrics, speed improvements, or project results.
 
-8. **references**: 8–12 APA-style references relevant to the internship domain. Format: Author(s). (Year). Title. Source/Publisher. URL if applicable.
+8. **conclusion**: 3 paragraph blocks. Summarize the internship experience, key takeaways, and future directions. Use bold terms to highlight major lessons or future steps.
 
-Be highly specific to "${internshipDomain}". No generic filler. Use simple, clear, and easy-to-understand language. Avoid overly complex, convoluted, or dense academic jargon. Write in a straightforward style that a typical student can easily read, comprehend, and confidently explain to an examiner. Academic prose style but clear and accessible. No markdown formatting in the text.
+9. **references**: 8–12 APA-style references relevant to the internship domain. Format: Author(s). (Year). Title. Source/Publisher. URL if applicable. Do NOT use bolding, bullet points, or subheadings inside references.
+
+Be highly specific to "${internshipDomain}". No generic filler. Use simple, clear, and easy-to-understand language. Avoid overly complex, convoluted, or dense academic jargon. Write in a straightforward style that a typical student can easily read, comprehend, and confidently explain to an examiner. Academic prose style but clear and accessible. Use markdown bolding (**key term**), newlines, subheadings (### heading), and list items (- item) strictly as specified above to create a professional, hand-made, and beautifully structured report. Do not use any other markdown formatting (like links, blockquotes, or code blocks).
 `;
 
   try {

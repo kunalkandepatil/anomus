@@ -5,8 +5,26 @@ const ipCache = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_WINDOW = 12 * 60 * 60 * 1000; // 12 hours
 const MAX_REQUESTS = 3; // 3 generations per 12 hours
 
+export const getClientIp = (req: Request): string => {
+  // Prioritize Cloudflare client IP, then Real IP, then Forwarded chain, then fallback
+  let ip = (req.headers['cf-connecting-ip'] as string) || 
+           (req.headers['x-real-ip'] as string);
+
+  if (!ip && req.headers['x-forwarded-for']) {
+    const forwarded = req.headers['x-forwarded-for'] as string;
+    ip = forwarded.split(',')[0].trim();
+  }
+
+  const resolvedIp = ip || req.ip;
+  if (!resolvedIp) {
+    // Safety fallback: Generate a random ID per request to prevent locking out all undetected clients globally
+    return `unknown_fallback_${Math.random().toString(36).substring(2, 9)}`;
+  }
+  return resolvedIp;
+};
+
 export const rateLimiter = (req: Request, res: Response, next: NextFunction) => {
-  const ip = req.ip || (req.headers['x-forwarded-for'] as string) || 'unknown';
+  const ip = getClientIp(req);
   const now = Date.now();
   const record = ipCache.get(ip);
 
@@ -26,7 +44,7 @@ export const rateLimiter = (req: Request, res: Response, next: NextFunction) => 
 };
 
 export const getRateLimit = (req: Request, res: Response) => {
-  const ip = req.ip || (req.headers['x-forwarded-for'] as string) || 'unknown';
+  const ip = getClientIp(req);
   const now = Date.now();
   const record = ipCache.get(ip);
 
