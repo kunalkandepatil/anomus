@@ -4,7 +4,7 @@ import { buildDeck } from './ppt/buildDeck.js';
 import { slugify } from './ppt/xmlUtils.js';
 import type { FormInput } from './types.js';
 import { rateLimiter } from '../../../middleware.js';
-import { incrementGenerationCount } from '../../../tracker.js';
+import { incrementGenerationCount, saveGeneratedData } from '../../../tracker.js';
 
 export const internshipGeneratorRouter = express.Router();
 
@@ -31,6 +31,13 @@ internshipGeneratorRouter.post('/', rateLimiter, async (req, res) => {
     } catch (e) {
       console.warn('[internship-ppt-creator] Outline generation failed to parse, retrying once...', e);
       outline = await buildOutline(internshipTitle);
+    }
+
+    // Save JSON data
+    try {
+      await saveGeneratedData('ppt', { internshipTitle, studentName, prn, classDiv, program }, outline);
+    } catch (err) {
+      console.error('[internship-ppt-creator] Failed to save JSON data:', err);
     }
 
     // 4. Build PPTX

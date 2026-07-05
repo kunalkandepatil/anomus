@@ -8,8 +8,8 @@ interface Step {
   id: keyof GenerateRequest;
   question: (vals: Partial<GenerateRequest>) => React.ReactNode;
   sub: (vals: Partial<GenerateRequest>) => string;
-  placeholder?: string;
-  hint?: string;
+  placeholder?: string | ((vals: Partial<GenerateRequest>) => string);
+  hint?: string | ((vals: Partial<GenerateRequest>) => string);
   type: 'text' | 'select';
 }
 
@@ -41,7 +41,13 @@ const STEPS: Step[] = [
       );
     },
     sub: () => 'Permanent Registration Number.',
-    placeholder: 'e.g. 22458020070',
+    placeholder: (v) => {
+      const name = v.studentName || '';
+      if (/vikrant|akanksha/i.test(name)) {
+        return 'e.g. 22458020066';
+      }
+      return 'e.g. 22458020070';
+    },
     hint: 'Find it on your college ID or marksheet',
     type: 'text',
   },
@@ -164,7 +170,7 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ onSubmit }) => {
               className={`wizard-input ${error ? 'wizard-input-error' : ''}`}
               type="text"
               value={current}
-              placeholder={currentStep.placeholder}
+              placeholder={typeof currentStep.placeholder === 'function' ? currentStep.placeholder(values) : currentStep.placeholder}
               onChange={e => { setCurrent(e.target.value); setError(''); }}
               onKeyDown={handleKey}
               autoComplete="off"
@@ -174,7 +180,9 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ onSubmit }) => {
             <div className="wizard-field-meta">
               {error
                 ? <span className="wizard-error">{error}</span>
-                : <span className="wizard-hint">{currentStep.hint}</span>
+                : <span className="wizard-hint">
+                    {typeof currentStep.hint === 'function' ? currentStep.hint(values) : currentStep.hint}
+                  </span>
               }
               <span className="wizard-enter-hint">press Enter ↵</span>
             </div>

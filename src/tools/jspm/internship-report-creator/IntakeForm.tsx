@@ -9,8 +9,8 @@ interface Step {
   id: keyof GenerateReportRequest;
   question: (vals: Partial<GenerateReportRequest>) => React.ReactNode;
   sub: (vals: Partial<GenerateReportRequest>) => string;
-  placeholder?: string;
-  hint?: string;
+  placeholder?: string | ((vals: Partial<GenerateReportRequest>) => string);
+  hint?: string | ((vals: Partial<GenerateReportRequest>) => string);
   optional?: boolean;
 }
 
@@ -54,7 +54,13 @@ const STEPS: Step[] = [
     id: 'rollNumber',
     question: () => 'Your PRN?',
     sub: () => 'Permanent Registration Number.',
-    placeholder: 'e.g. 22458020070',
+    placeholder: (vals) => {
+      const name = vals.studentName || '';
+      if (/vikrant|akanksha/i.test(name)) {
+        return 'e.g. 22458020066';
+      }
+      return 'e.g. 22458020070';
+    },
     hint: 'Find it on your college ID or marksheet',
   },
   {
@@ -409,7 +415,7 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ onSubmit }) => {
               className={`wizard-input ${error ? 'wizard-input-error' : ''}`}
               type="text"
               value={current}
-              placeholder={currentStep.placeholder}
+              placeholder={typeof currentStep.placeholder === 'function' ? currentStep.placeholder(values) : currentStep.placeholder}
               onChange={e => { setCurrent(e.target.value); setError(''); }}
               onKeyDown={handleKey}
               autoComplete="off"
@@ -420,7 +426,9 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ onSubmit }) => {
           <div className="wizard-field-meta">
             {error
               ? <span className="wizard-error">{error}</span>
-              : <span className="wizard-hint">{currentStep.hint}</span>
+              : <span className="wizard-hint">
+                  {typeof currentStep.hint === 'function' ? currentStep.hint(values) : currentStep.hint}
+                </span>
             }
             {currentStep.id !== 'certificateImage' && (
               <span className="wizard-enter-hint">press Enter ↵</span>

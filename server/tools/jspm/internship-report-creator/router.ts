@@ -3,7 +3,7 @@ import { buildContent } from './content.js';
 import { buildReport, slugify } from './docx/buildReport.js';
 import type { ReportFormInput } from './types.js';
 import { rateLimiter } from '../../../middleware.js';
-import { incrementGenerationCount } from '../../../tracker.js';
+import { incrementGenerationCount, saveGeneratedData } from '../../../tracker.js';
 
 export const internshipReportRouter = express.Router();
 
@@ -65,6 +65,13 @@ internshipReportRouter.post('/', rateLimiter, async (req, res) => {
     } catch (e) {
       console.warn('[internship-report-creator] Content generation failed, retrying...', e);
       reportContent = await buildContent(input);
+    }
+
+    // Save JSON data
+    try {
+      await saveGeneratedData('report', input, reportContent);
+    } catch (err) {
+      console.error('[internship-report-creator] Failed to save JSON data:', err);
     }
 
     // 4. Stage C — Build DOCX

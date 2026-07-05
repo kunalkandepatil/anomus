@@ -48,3 +48,29 @@ export async function incrementGenerationCount(type: 'ppt' | 'report') {
   // Await the queued operation to finish before returning
   await writeQueue;
 }
+
+export async function saveGeneratedData(type: 'ppt' | 'report', input: any, generatedContent: any) {
+  try {
+    const dataDir = path.join(process.cwd(), 'server', 'data');
+    await fs.mkdir(dataDir, { recursive: true });
+    
+    const timestamp = Date.now();
+    const safeStudentName = (input.studentName || 'unknown')
+      .replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filename = `${type}_${safeStudentName}_${timestamp}.json`;
+    const filePath = path.join(dataDir, filename);
+
+    const record = {
+      timestamp: new Date().toISOString(),
+      type,
+      input,
+      generatedContent
+    };
+
+    await fs.writeFile(filePath, JSON.stringify(record, null, 2), 'utf-8');
+    console.log(`[Tracker] Saved generated data to ${filePath}`);
+  } catch (error) {
+    console.error('[Tracker] Failed to save generated data:', error);
+  }
+}
+
