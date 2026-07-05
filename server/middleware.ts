@@ -1,9 +1,45 @@
 import { Request, Response, NextFunction } from 'express';
+import fs from 'fs';
+import path from 'path';
 
-// 1. IP-based Rate Limiter (In-Memory)
+// 1. IP-based Rate Limiter (In-Memory + File Persistence)
 const ipCache = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_WINDOW = 12 * 60 * 60 * 1000; // 12 hours
 const MAX_REQUESTS = 3; // 3 generations per 12 hours
+const IP_LIMITS_FILE = path.join(process.cwd(), 'server', 'ip_limits.json');
+
+const saveIpCacheToFile = () => {
+  try {
+    const data: Record<string, { count: number; resetTime: number }> = {};
+    for (const [ip, record] of ipCache.entries()) {
+      data[ip] = record;
+    }
+    fs.writeFileSync(IP_LIMITS_FILE, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (error) {
+    console.error('[RateLimiter] Failed to save ipCache to file:', error);
+  }
+};
+
+const loadIpCacheFromFile = () => {
+  try {
+    if (fs.existsSync(IP_LIMITS_FILE)) {
+      const content = fs.readFileSync(IP_LIMITS_FILE, 'utf-8');
+      const data = JSON.parse(content);
+      const now = Date.now();
+      for (const ip of Object.keys(data)) {
+        const record = data[ip];
+        if (now <= record.resetTime) {
+          ipCache.set(ip, record);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('[RateLimiter] Failed to load ipCache from file:', error);
+  }
+};
+
+// Initialize cache from file on startup
+loadIpCacheFromFile();
 
 export const getClientIp = (req: Request): string => {
   // Prioritize Cloudflare client IP, then Real IP, then Forwarded chain, then fallback
@@ -30,6 +66,7 @@ export const rateLimiter = (req: Request, res: Response, next: NextFunction) => 
 
   if (!record || now > record.resetTime) {
     ipCache.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    saveIpCacheToFile();
     return next();
   }
 
@@ -40,6 +77,7 @@ export const rateLimiter = (req: Request, res: Response, next: NextFunction) => 
   }
 
   record.count += 1;
+  saveIpCacheToFile();
   next();
 };
 
@@ -55,4 +93,5 @@ export const getRateLimit = (req: Request, res: Response) => {
 
   res.json({ count: record.count, limit: MAX_REQUESTS });
 };
+
 
