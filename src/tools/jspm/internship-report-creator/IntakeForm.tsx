@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowRight, ArrowLeft, ChevronRight, SkipForward } from 'lucide-react';
 import type { GenerateReportRequest } from './api';
+import { Dropzone } from '@unbrn/ui/Dropzone';
 
 
 /* ─── Step config ─── */
@@ -107,7 +108,32 @@ const STEPS: Step[] = [
     placeholder: 'e.g. IV',
     hint: 'Use Roman numerals (e.g. III, IV, V, VI)',
   },
+  {
+    id: 'certificateImage',
+    question: () => 'Upload Internship Certificate',
+    sub: () => 'Upload your certificate (PDF or Image) to attach it to the report.',
+    hint: 'Supported formats: PDF, PNG, JPG, JPEG (PDF pages are auto-converted to images)',
+    optional: true,
+  },
 ];
+
+const loadPdfJs = (): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    if ((window as any).pdfjsLib) {
+      resolve((window as any).pdfjsLib);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    script.onload = () => {
+      const pdfjs = (window as any).pdfjsLib;
+      pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      resolve(pdfjs);
+    };
+    script.onerror = () => reject(new Error('Failed to load PDF.js library from CDN.'));
+    document.head.appendChild(script);
+  });
+};
 
 interface IntakeFormProps {
   onSubmit: (data: GenerateReportRequest) => void;
@@ -121,6 +147,7 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ onSubmit }) => {
   const [values, setValues] = useState<Partial<GenerateReportRequest>>({});
   const [current, setCurrent] = useState('');
   const [error, setError] = useState('');
+  const [isProcessingFile, setIsProcessingFile] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const currentStep = STEPS[step];
@@ -128,12 +155,132 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ onSubmit }) => {
   const isLastStep = step === total - 1;
 
   useEffect(() => {
-    const t = setTimeout(() => inputRef.current?.focus(), 420);
+    const t = setTimeout(() => {
+      if (currentStep.id !== 'certificateImage') {
+        inputRef.current?.focus();
+      }
+    }, 420);
     const existing = values[currentStep.id];
     setCurrent(existing ?? '');
     setError('');
+    setIsProcessingFile(false);
     return () => clearTimeout(t);
   }, [step]);
+
+  const processFile = async (file: File) => {
+    setError('');
+    const isImage = file.type.startsWith('image/');
+    const isPdf = file.type === 'application/pdf';
+
+    if (!isImage && !isPdf) {
+      setError('Only PDF or Image files are supported.');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setError('File size must be less than 10MB.');
+      return;
+    }
+
+    setIsProcessingFile(true);
+
+    try {
+      if (isImage) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const result = e.target?.result;
+          if (typeof result === 'string') {
+            setCurrent(result);
+            setIsProcessingFile(false);
+          } else {
+            setError('Failed to read image file.');
+            setIsProcessingFile(false);
+          }
+        };
+        reader.onerror = () => {
+          setError('Error reading image file.');
+          setIsProcessingFile(false);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        const pdfjs = await loadPdfJs();
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          try {
+            const arrayBuffer = e.target?.result as ArrayBuffer;
+            const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+            
+            if (pdf.numPages === 0) {
+              setError('The PDF file is empty.');
+              setIsProcessingFile(false);
+              return;
+            }
+
+            const page = await pdf.getPage(1);
+            const viewport = page.getViewport({ scale: 2.0 });
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            
+            if (!context) {
+              setError('Could not initialize canvas context.');
+              setIsProcessingFile(false);
+              return;
+            }
+            
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            await page.render({
+              canvasContext: context,
+              viewport: viewport,
+            }).promise;
+
+            const base64Png = canvas.toDataURL('image/png');
+            setCurrent(base64Png);
+            setIsProcessingFile(false);
+          } catch (err: any) {
+            console.error(err);
+            setError('Failed to render PDF page. Make sure the PDF is not password protected.');
+            setIsProcessingFile(false);
+          }
+        };
+        reader.onerror = () => {
+          setError('Error reading PDF file.');
+          setIsProcessingFile(false);
+        };
+        reader.readAsArrayBuffer(file);
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'An error occurred during file processing.');
+      setIsProcessingFile(false);
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await processFile(file);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setCurrent('');
+    setError('');
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    if (isProcessingFile) return;
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      await processFile(file);
+    }
+  };
 
   const advance = useCallback(() => {
     if (!current.trim() && !currentStep.optional) {
@@ -209,25 +356,75 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ onSubmit }) => {
         </div>
 
         <div className="wizard-field">
-          <input
-            ref={inputRef}
-            id={currentStep.id}
-            className={`wizard-input ${error ? 'wizard-input-error' : ''}`}
-            type="text"
-            value={current}
-            placeholder={currentStep.placeholder}
-            onChange={e => { setCurrent(e.target.value); setError(''); }}
-            onKeyDown={handleKey}
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck={false}
-          />
+          {currentStep.id === 'certificateImage' ? (
+            <div className="wizard-file-upload">
+              <input
+                type="file"
+                id="cert-file-input"
+                accept="application/pdf,image/*"
+                style={{ display: 'none' }}
+                onChange={handleFileChange}
+                disabled={isProcessingFile}
+              />
+              {isProcessingFile ? (
+                <div className="file-upload-loader">
+                  <div className="spinner" />
+                  <p>Processing certificate...</p>
+                </div>
+              ) : current ? (
+                <div className="file-preview-container">
+                  <div className="file-preview-card">
+                    <img src={current} alt="Certificate preview" className="file-preview-image" />
+                    <div className="file-preview-overlay">
+                      <button
+                        type="button"
+                        className="file-remove-btn"
+                        onClick={handleRemoveFile}
+                      >
+                        Remove file
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <Dropzone
+                  accept="application/pdf,image/*"
+                  multiple={false}
+                  maxSize={10 * 1024 * 1024}
+                  label="Upload Certificate"
+                  description="PDF or Image up to 10MB"
+                  onFilesDrop={(droppedFiles: File[]) => {
+                    if (droppedFiles && droppedFiles[0]) {
+                      processFile(droppedFiles[0]);
+                    }
+                  }}
+                  accentColor="#0c8f00"
+                />
+              )}
+            </div>
+          ) : (
+            <input
+              ref={inputRef}
+              id={currentStep.id}
+              className={`wizard-input ${error ? 'wizard-input-error' : ''}`}
+              type="text"
+              value={current}
+              placeholder={currentStep.placeholder}
+              onChange={e => { setCurrent(e.target.value); setError(''); }}
+              onKeyDown={handleKey}
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+            />
+          )}
           <div className="wizard-field-meta">
             {error
               ? <span className="wizard-error">{error}</span>
               : <span className="wizard-hint">{currentStep.hint}</span>
             }
-            <span className="wizard-enter-hint">press Enter ↵</span>
+            {currentStep.id !== 'certificateImage' && (
+              <span className="wizard-enter-hint">press Enter ↵</span>
+            )}
           </div>
         </div>
 
@@ -235,7 +432,7 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ onSubmit }) => {
           <button
             className="wizard-continue"
             onClick={advance}
-            disabled={!current.trim() && !currentStep.optional}
+            disabled={isProcessingFile || (!current.trim() && !currentStep.optional)}
             type="button"
           >
             {isLastStep ? (

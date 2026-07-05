@@ -10,6 +10,7 @@ import {
   makePageBreak,
   slugify,
   makeParagraph,
+  makeImageParagraph,
 } from './xmlUtils.js';
 
 function romanize(num: number): string {
@@ -70,24 +71,25 @@ function makeTableRow(col1: string, col2: string, col3: string): string {
   </w:tr>`;
 }
 
-function buildContentsTable(modules: { title: string }[]): string {
+function buildContentsTable(modules: { title: string }[], hasCertificate: boolean): string {
+  const startPage = hasCertificate ? 10 : 9;
   const rows: string[] = [];
   rows.push(makeTableRow('Sr. No.', 'Particulars', 'Page No.'));
-  rows.push(makeTableRow('1.', 'Introduction', '9'));
-  rows.push(makeTableRow('2.', 'Methods and Techniques', '10'));
+  rows.push(makeTableRow('1.', 'Introduction', String(startPage)));
+  rows.push(makeTableRow('2.', 'Methods and Techniques', String(startPage + 1)));
   
   const M = modules.length;
   modules.forEach((mod, idx) => {
     const num = idx + 1;
     const itemNum = idx + 3;
     const title = `Module ${romanize(num)}: ${mod.title}`;
-    const pageNum = String(10 + num);
+    const pageNum = String(startPage + 1 + num);
     rows.push(makeTableRow(`${itemNum}.`, title, pageNum));
   });
   
-  rows.push(makeTableRow(`${M + 3}.`, 'Results and Discussion', String(11 + M)));
-  rows.push(makeTableRow(`${M + 4}.`, 'Conclusion', String(12 + M)));
-  rows.push(makeTableRow(`${M + 5}.`, 'References', String(13 + M)));
+  rows.push(makeTableRow(`${M + 3}.`, 'Results and Discussion', String(startPage + 2 + M)));
+  rows.push(makeTableRow(`${M + 4}.`, 'Conclusion', String(startPage + 3 + M)));
+  rows.push(makeTableRow(`${M + 5}.`, 'References', String(startPage + 4 + M)));
   
   return `<w:tbl>
     <w:tblPr>
@@ -341,13 +343,67 @@ export async function buildReport(
   console.log('[buildReport] Filling cover page and certificate fields...');
   xml = fillCoverPage(xml, input);
 
+  // 1.2 Insert uploaded certificate if provided
+  let hasCertificate = false;
+  if (input.certificateImage) {
+    console.log('[buildReport] Certificate image uploaded, embedding...');
+    try {
+      const base64Data = input.certificateImage.split(',')[1] || input.certificateImage;
+      const imgBuffer = Buffer.from(base64Data, 'base64');
+      
+      // Save image to zip
+      zip.file('word/media/certificate.png', imgBuffer);
+
+      // Register PNG Content Type in [Content_Types].xml
+      let contentTypesXml = await zip.file('[Content_Types].xml')!.async('string');
+      if (!contentTypesXml.includes('Extension="png"') && !contentTypesXml.includes('Extension="PNG"')) {
+        const pngDefault = '<Default Extension="png" ContentType="image/png"/>';
+        contentTypesXml = contentTypesXml.replace('</Types>', `${pngDefault}</Types>`);
+        zip.file('[Content_Types].xml', contentTypesXml);
+      }
+
+      // Register relationship in word/_rels/document.xml.rels
+      let relsXml = await zip.file('word/_rels/document.xml.rels')!.async('string');
+      const matchIds = relsXml.match(/Id="rId(\d+)"/g);
+      let maxId = 18;
+      if (matchIds) {
+        const ids = matchIds.map(m => parseInt(m.match(/\d+/)![0], 10));
+        maxId = Math.max(...ids);
+      }
+      const imageRelId = `rId${maxId + 1}`;
+      const newRel = `<Relationship Id="${imageRelId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/certificate.png"/>`;
+      relsXml = relsXml.replace('</Relationships>', `${newRel}</Relationships>`);
+      zip.file('word/_rels/document.xml.rels', relsXml);
+
+      // Insert image into word/document.xml after Page 2
+      const declIdx = xml.indexOf('DECLARATION BY STUDENT');
+      if (declIdx !== -1) {
+        const brIdx = xml.lastIndexOf('<w:br w:type="page"/>', declIdx);
+        if (brIdx !== -1) {
+          const pStart = xml.lastIndexOf('<w:p ', brIdx);
+          const pEnd = xml.indexOf('</w:p>', brIdx) + '</w:p>'.length;
+          
+          if (pStart !== -1 && pEnd !== -1 && pStart < pEnd) {
+            const certImgXml = makeImageParagraph(imageRelId);
+            const replacement = `<w:p><w:r><w:br w:type="page"/></w:r></w:p>${certImgXml}<w:p><w:r><w:br w:type="page"/></w:r></w:p>`;
+            xml = xml.slice(0, pStart) + replacement + xml.slice(pEnd);
+            hasCertificate = true;
+            console.log('[buildReport] Successfully inserted certificate image page after Page 2.');
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[buildReport] Failed to embed uploaded certificate image:', err);
+    }
+  }
+
   // 1.5 Replace Contents Table (second Table in document)
   console.log('[buildReport] Rebuilding Contents table...');
   const firstTblStart = xml.indexOf('<w:tbl>');
   const contentsTblStart = xml.indexOf('<w:tbl>', firstTblStart + 1);
   if (contentsTblStart !== -1) {
     const contentsTblEnd = xml.indexOf('</w:tbl>', contentsTblStart) + '</w:tbl>'.length;
-    const newTblXml = buildContentsTable(content.modules);
+    const newTblXml = buildContentsTable(content.modules, hasCertificate);
     xml = xml.slice(0, contentsTblStart) + newTblXml + xml.slice(contentsTblEnd);
   }
 

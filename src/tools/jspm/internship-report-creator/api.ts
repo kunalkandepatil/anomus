@@ -11,6 +11,7 @@ export interface GenerateReportRequest {
   internshipStartDate: string;
   internshipEndDate: string;
   semester: string;
+  certificateImage?: string; // base64 encoded image string
 }
 
 export async function generateReport(data: GenerateReportRequest): Promise<Blob> {

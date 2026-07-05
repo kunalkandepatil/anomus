@@ -12,6 +12,7 @@ export interface ReportFormInput {
   internshipStartDate: string;
   internshipEndDate: string;
   semester: string;
+  certificateImage?: string; // base64 encoded image string
 }
 
 // ─── AI-generated report content (Stage B JSON) ───────────────────────────────

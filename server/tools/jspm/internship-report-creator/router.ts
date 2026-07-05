@@ -22,6 +22,7 @@ internshipReportRouter.post('/', rateLimiter, async (req, res) => {
       internshipStartDate,
       internshipEndDate,
       semester,
+      certificateImage,
     } = req.body as ReportFormInput;
 
     // 1. Validate required fields (guides are optional)
@@ -48,6 +49,7 @@ internshipReportRouter.post('/', rateLimiter, async (req, res) => {
       internshipStartDate: internshipStartDate.trim(),
       internshipEndDate: internshipEndDate.trim(),
       semester: semester.trim(),
+      certificateImage: certificateImage ?? undefined,
     };
 
     console.log(`[internship-report-creator] Generation request: "${input.internshipDomain}" @ "${input.companyName}"`);
