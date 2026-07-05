@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowRight, ArrowLeft, ChevronRight, SkipForward } from 'lucide-react';
 import type { GenerateReportRequest } from './api';
 import { Dropzone } from '@unbrn/ui/Dropzone';
+import { validateTitle, validateName, validatePrn, validateClassDiv, validateProgram, validateCompanyName, validateSchoolName, validateDate, validateSemester } from '../../../validation';
 
 
 /* ─── Step config ─── */
@@ -289,11 +290,62 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ onSubmit }) => {
   };
 
   const advance = useCallback(() => {
-    if (!current.trim() && !currentStep.optional) {
+    const val = current.trim();
+    if (!val && !currentStep.optional) {
       setError('This one is required ↑');
       return;
     }
-    const updated = { ...values, [currentStep.id]: current.trim() };
+
+    let validationError: string | null = null;
+    if (val || !currentStep.optional) {
+      switch (currentStep.id) {
+        case 'internshipDomain':
+          validationError = validateTitle(val, 'Internship domain');
+          break;
+        case 'companyName':
+          validationError = validateCompanyName(val);
+          break;
+        case 'studentName':
+          validationError = validateName(val, 'Student name');
+          break;
+        case 'classDiv':
+          validationError = validateClassDiv(val);
+          break;
+        case 'rollNumber':
+          validationError = validatePrn(val, 'PRN');
+          break;
+        case 'program':
+          validationError = validateProgram(val);
+          break;
+        case 'schoolName':
+          validationError = validateSchoolName(val);
+          break;
+        case 'facultyGuideName':
+          validationError = validateName(val, 'Faculty guide name', true);
+          break;
+        case 'industryGuideName':
+          validationError = validateName(val, 'Industry guide name', true);
+          break;
+        case 'internshipStartDate':
+          validationError = validateDate(val, 'Internship start date');
+          break;
+        case 'internshipEndDate':
+          validationError = validateDate(val, 'Internship end date');
+          break;
+        case 'semester':
+          validationError = validateSemester(val);
+          break;
+        default:
+          break;
+      }
+    }
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    const updated = { ...values, [currentStep.id]: val };
     setValues(updated);
 
     if (step < total - 1) {

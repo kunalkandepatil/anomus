@@ -5,7 +5,7 @@ import path from 'path';
 // 1. IP-based Rate Limiter (In-Memory + File Persistence)
 const ipCache = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_WINDOW = 12 * 60 * 60 * 1000; // 12 hours
-const MAX_REQUESTS = 6; // 6 generations per 12 hours
+const MAX_REQUESTS = 3;
 const IP_LIMITS_FILE = path.join(process.cwd(), 'server', 'ip_limits.json');
 let writeQueue = Promise.resolve();
 

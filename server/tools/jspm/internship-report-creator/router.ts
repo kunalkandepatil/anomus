@@ -4,6 +4,7 @@ import { buildReport, slugify } from './docx/buildReport.js';
 import type { ReportFormInput } from './types.js';
 import { rateLimiter } from '../../../middleware.js';
 import { incrementGenerationCount, saveGeneratedData } from '../../../tracker.js';
+import { validateReportInput } from '../../../validation.js';
 
 export const internshipReportRouter = express.Router();
 
@@ -25,32 +26,28 @@ internshipReportRouter.post('/', rateLimiter, async (req, res) => {
       certificateImage,
     } = req.body as ReportFormInput;
 
-    // 1. Validate required fields (guides are optional)
-    const required = { internshipDomain, companyName, studentName, classDiv, rollNumber, program, schoolName, internshipStartDate, internshipEndDate, semester };
-    const missing = Object.entries(required)
-      .filter(([, v]) => !v || !String(v).trim())
-      .map(([k]) => k);
-
-    if (missing.length > 0) {
-      res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
-      return;
-    }
-
     const input: ReportFormInput = {
-      internshipDomain: internshipDomain.trim(),
-      companyName: companyName.trim(),
-      studentName: studentName.trim(),
-      classDiv: classDiv.trim(),
-      rollNumber: rollNumber.trim(),
-      program: program.trim(),
-      schoolName: schoolName.trim(),
+      internshipDomain: internshipDomain?.trim() ?? '',
+      companyName: companyName?.trim() ?? '',
+      studentName: studentName?.trim() ?? '',
+      classDiv: classDiv?.trim() ?? '',
+      rollNumber: rollNumber?.trim() ?? '',
+      program: program?.trim() ?? '',
+      schoolName: schoolName?.trim() ?? '',
       facultyGuideName: facultyGuideName?.trim() ?? '',
       industryGuideName: industryGuideName?.trim() ?? '',
-      internshipStartDate: internshipStartDate.trim(),
-      internshipEndDate: internshipEndDate.trim(),
-      semester: semester.trim(),
+      internshipStartDate: internshipStartDate?.trim() ?? '',
+      internshipEndDate: internshipEndDate?.trim() ?? '',
+      semester: semester?.trim() ?? '',
       certificateImage: certificateImage ?? undefined,
     };
+
+    // 1. Validate fields
+    const validationError = validateReportInput(input);
+    if (validationError) {
+      res.status(400).json({ error: validationError });
+      return;
+    }
 
     console.log(`[internship-report-creator] Generation request: "${input.internshipDomain}" @ "${input.companyName}"`);
     console.log(`[internship-report-creator] Student: "${input.studentName}", PRN: "${input.rollNumber}", Class: "${input.classDiv}", Program: "${input.program}"`);

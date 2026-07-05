@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowRight, ArrowLeft, Check, ChevronRight } from 'lucide-react';
 import type { GenerateRequest } from './api';
+import { validateTitle, validateName, validatePrn, validateClassDiv, validateProgram } from '../../../validation';
 
 
 /* ─── Config ─── */
@@ -98,11 +99,39 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ onSubmit }) => {
   }, [step]);
 
   const advance = useCallback(() => {
-    if (!current.trim()) {
+    const val = current.trim();
+    if (!val) {
       setError('This one is required ↑');
       return;
     }
-    const updated = { ...values, [currentStep.id]: current.trim() };
+
+    let validationError: string | null = null;
+    switch (currentStep.id) {
+      case 'internshipTitle':
+        validationError = validateTitle(val, 'Internship title');
+        break;
+      case 'studentName':
+        validationError = validateName(val, 'Student name');
+        break;
+      case 'prn':
+        validationError = validatePrn(val, 'PRN');
+        break;
+      case 'classDiv':
+        validationError = validateClassDiv(val);
+        break;
+      case 'program':
+        validationError = validateProgram(val);
+        break;
+      default:
+        break;
+    }
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    const updated = { ...values, [currentStep.id]: val };
     setValues(updated);
 
     if (step < total - 1) {

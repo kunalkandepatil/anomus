@@ -5,6 +5,7 @@ import { slugify } from './ppt/xmlUtils.js';
 import type { FormInput } from './types.js';
 import { rateLimiter } from '../../../middleware.js';
 import { incrementGenerationCount, saveGeneratedData } from '../../../tracker.js';
+import { validatePptInput } from '../../../validation.js';
 
 export const internshipGeneratorRouter = express.Router();
 
@@ -13,8 +14,9 @@ internshipGeneratorRouter.post('/', rateLimiter, async (req, res) => {
     const { internshipTitle, studentName, prn, classDiv, program } = req.body as FormInput;
 
     // 1. Validate fields
-    if (!internshipTitle || !studentName || !prn || !classDiv || !program) {
-      res.status(400).json({ error: 'All fields are required.' });
+    const validationError = validatePptInput({ internshipTitle, studentName, prn, classDiv, program });
+    if (validationError) {
+      res.status(400).json({ error: validationError });
       return;
     }
 
