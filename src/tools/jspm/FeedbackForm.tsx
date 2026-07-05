@@ -53,13 +53,13 @@ export function FeedbackForm({ toolName, studentName, domain }: FeedbackFormProp
     }
   };
 
-  // if (isSubmitted) {
-  //   return (
-  //     <div className="feedback-success-state">
-  //       <p>Message sent, now go back to doing nothing.</p>
-  //     </div>
-  //   );
-  // }
+  if (isSubmitted) {
+    return (
+      <div className="feedback-success-state">
+        <p>Message sent, now go back to doing nothing.</p>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="feedback-form-container">
@@ -87,7 +87,7 @@ export function FeedbackForm({ toolName, studentName, domain }: FeedbackFormProp
       <Textarea
         variant="outlined"
         value={feedbackText}
-        onChange={(e) => setFeedbackText(e.target.value)}
+        onChange={(e: any) => setFeedbackText(e.target.value)}
         placeholder="Be sweet, savage, or just tell the creator how much time you saved..."
         fullWidth
       />
