@@ -1,6 +1,5 @@
-import { GoogleGenAI, Type } from '@google/genai';
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+import { Type } from '@google/genai';
+import { generateContentWithFallback } from '../../../gemini.js';
 
 const outlineSchema = {
   type: Type.OBJECT,
@@ -51,7 +50,7 @@ export async function buildOutline(
   console.log(`[buildOutline] Generating outline for: "${internshipTitle}"...`);
   const startTime = Date.now();
   try {
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithFallback({
       model: 'gemini-3.1-flash-lite',
       contents: [
         {

@@ -1,7 +1,6 @@
-import { GoogleGenAI, Type } from '@google/genai';
+import { Type } from '@google/genai';
 import type { ReportFormInput, ReportContent } from './types.js';
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+import { generateContentWithFallback } from '../../../gemini.js';
 
 const reportSchema = {
   type: Type.OBJECT,
@@ -88,7 +87,7 @@ Be highly specific to "${internshipDomain}". No generic filler. Use simple, clea
 `;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithFallback({
       model: 'gemini-3.1-flash-lite',
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: {
