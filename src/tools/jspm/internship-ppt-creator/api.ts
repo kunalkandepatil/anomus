@@ -7,13 +7,9 @@ export interface GenerateRequest {
 }
 
 export async function generatePpt(data: GenerateRequest): Promise<Blob> {
-  const clientId = localStorage.getItem('anomus_client_id') || '';
   const response = await fetch('/api/jspm/internship-ppt-creator', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-client-id': clientId
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
 

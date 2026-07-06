@@ -15,13 +15,9 @@ export interface GenerateReportRequest {
 }
 
 export async function generateReport(data: GenerateReportRequest): Promise<Blob> {
-  const clientId = localStorage.getItem('anomus_client_id') || '';
   const response = await fetch('/api/jspm/internship-report-creator', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-client-id': clientId
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
 

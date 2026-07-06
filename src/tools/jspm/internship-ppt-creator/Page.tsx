@@ -34,12 +34,6 @@ export default function InternshipGeneratorPage({ onLoadingStateChange }: Intern
   }, [toolState, onLoadingStateChange]);
 
   const handleSubmit = async (data: GenerateRequest) => {
-    if (data.studentName) {
-      localStorage.setItem('anomus_student_name', data.studentName);
-    }
-    if (data.prn) {
-      localStorage.setItem('anomus_student_prn', data.prn);
-    }
     setLastRequest(data);
     setToolState('loading');
     setErrorMessage('');

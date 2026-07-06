@@ -44,13 +44,9 @@ export async function logToDiscord(data: LogData) {
       ]
     };
 
-    const clientId = localStorage.getItem('anomus_client_id') || '';
     await fetch('/api/log', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-client-id': clientId
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
   } catch (error) {

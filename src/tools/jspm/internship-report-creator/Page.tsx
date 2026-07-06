@@ -34,12 +34,6 @@ export default function InternshipReportPage({ onLoadingStateChange }: Internshi
   }, [toolState, onLoadingStateChange]);
 
   const handleSubmit = async (data: GenerateReportRequest) => {
-    if (data.studentName) {
-      localStorage.setItem('anomus_student_name', data.studentName);
-    }
-    if (data.rollNumber) {
-      localStorage.setItem('anomus_student_prn', data.rollNumber);
-    }
     setLastRequest(data);
     setToolState('loading');
     setErrorMessage('');
