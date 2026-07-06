@@ -216,7 +216,7 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ onSubmit }) => {
           try {
             const arrayBuffer = e.target?.result as ArrayBuffer;
             const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
-
+            
             if (pdf.numPages === 0) {
               setError('The PDF file is empty.');
               setIsProcessingFile(false);
@@ -227,13 +227,13 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ onSubmit }) => {
             const viewport = page.getViewport({ scale: 2.0 });
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
-
+            
             if (!context) {
               setError('Could not initialize canvas context.');
               setIsProcessingFile(false);
               return;
             }
-
+            
             canvas.height = viewport.height;
             canvas.width = viewport.width;
 
@@ -479,8 +479,8 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ onSubmit }) => {
             {error
               ? <span className="wizard-error">{error}</span>
               : <span className="wizard-hint">
-                {typeof currentStep.hint === 'function' ? currentStep.hint(values) : currentStep.hint}
-              </span>
+                  {typeof currentStep.hint === 'function' ? currentStep.hint(values) : currentStep.hint}
+                </span>
             }
             {currentStep.id !== 'certificateImage' && (
               <span className="wizard-enter-hint">press Enter ↵</span>
@@ -496,7 +496,7 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ onSubmit }) => {
             type="button"
           >
             {isLastStep ? (
-              <>Generate <ChevronRight size={16} /></>
+              <>Generate Report <ChevronRight size={16} /></>
             ) : (
               <>Continue <ArrowRight size={15} /></>
             )}
