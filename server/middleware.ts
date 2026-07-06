@@ -47,8 +47,8 @@ loadIpCacheFromFile();
 
 export const getClientIp = (req: Request): string => {
   // Prioritize Cloudflare client IP, then Real IP, then Forwarded chain, then fallback
-  let ip = (req.headers['cf-connecting-ip'] as string) || 
-           (req.headers['x-real-ip'] as string);
+  let ip = (req.headers['cf-connecting-ip'] as string) ||
+    (req.headers['x-real-ip'] as string);
 
   if (!ip && req.headers['x-forwarded-for']) {
     const forwarded = req.headers['x-forwarded-for'] as string;
@@ -76,7 +76,7 @@ export const rateLimiter = (req: Request, res: Response, next: NextFunction) => 
 
   if (record.count >= MAX_REQUESTS) {
     return res.status(429).json({
-      error: 'Too many requests. You can only generate 6 documents every 12 hours.'
+      error: 'Too many requests. You can only generate 3 documents every 12 hours.'
     });
   }
 
