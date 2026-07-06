@@ -210,8 +210,8 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ onSubmit }) => {
               {error
                 ? <span className="wizard-error">{error}</span>
                 : <span className="wizard-hint">
-                    {typeof currentStep.hint === 'function' ? currentStep.hint(values) : currentStep.hint}
-                  </span>
+                  {typeof currentStep.hint === 'function' ? currentStep.hint(values) : currentStep.hint}
+                </span>
               }
               <span className="wizard-enter-hint">press Enter ↵</span>
             </div>
@@ -227,7 +227,7 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ onSubmit }) => {
             type="button"
           >
             {isLastStep ? (
-              <>Generate PPT <ChevronRight size={16} /></>
+              <>Generate <ChevronRight size={16} /></>
             ) : (
               <>Continue <ArrowRight size={15} /></>
             )}
