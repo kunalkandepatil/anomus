@@ -47,9 +47,6 @@ const loadIpCacheFromFile = () => {
       for (const ip of Object.keys(data)) {
         const record = data[ip];
         if (now <= record.resetTime) {
-          // Normalize loaded record to prevent TypeErrors
-          record.students = Array.isArray(record.students) ? record.students : [];
-          record.globalCount = typeof record.globalCount === 'number' ? record.globalCount : 0;
           ipCache.set(ip, record);
         }
       }
@@ -112,9 +109,7 @@ const findStudentRecord = (
   const now = Date.now();
   for (const [ip, ipRecord] of ipCache.entries()) {
     if (now > ipRecord.resetTime) continue;
-    // Defensive check: ensure students array is present before iterating
-    const students = Array.isArray(ipRecord.students) ? ipRecord.students : [];
-    for (const student of students) {
+    for (const student of ipRecord.students) {
       if (now > student.resetTime) continue;
       if (studentPrn && student.prn === studentPrn) {
         return { student, ipRecord, ip };
