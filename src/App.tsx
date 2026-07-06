@@ -310,8 +310,8 @@ export default function App() {
 
   // Smooth transition of rotation speed, intensity, and beamWidth
   useEffect(() => {
-    const targetSpeed = isGenerating ? 2.0 : 0.3;
-    const targetIntensity = isGenerating ? 1.0 : 0.5;
+    const targetSpeed = isGenerating ? 3.0 : 0.3;
+    const targetIntensity = isGenerating ? 4.0 : 0.5;
     const targetWidth = isGenerating ? 5.0 : 3.0;
 
     const initialSpeed = currentSpeedRef.current;
