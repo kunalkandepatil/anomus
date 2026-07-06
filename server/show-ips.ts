@@ -34,13 +34,25 @@ function main() {
 
       if (!expired) {
         activeCount++;
-        console.log(`🟢 IP: ${ip}`);
-        console.log(`   Requests: ${record.count} / 3`);
+        console.log(`🟢 IP: ${ip} (Active)`);
+        console.log(`   Global Network Requests: ${record.globalCount} / 150`);
         console.log(`   Resets in: ${timeLeftMin} minutes (${new Date(record.resetTime).toLocaleString()})`);
       } else {
         console.log(`🔴 IP: ${ip} (EXPIRED)`);
-        console.log(`   Requests: ${record.count} / 3`);
+        console.log(`   Global Network Requests: ${record.globalCount} / 150`);
         console.log(`   Reset at: ${new Date(record.resetTime).toLocaleString()}`);
+      }
+
+      if (record.students && record.students.length > 0) {
+        console.log(`   Students on this network:`);
+        for (const student of record.students) {
+          const studentExpired = now > student.resetTime;
+          const statusChar = studentExpired ? '🔴 (Expired)' : '🟢 (Active)';
+          console.log(`     - ${statusChar} Name: ${student.name || 'Anonymous'}`);
+          console.log(`       PRN: ${student.prn || 'N/A'}`);
+          console.log(`       Client ID: ${student.clientId || 'N/A'}`);
+          console.log(`       Requests: ${student.count} / 3`);
+        }
       }
       console.log('------------------------------------------------------------');
     }

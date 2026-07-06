@@ -266,7 +266,23 @@ export default function App() {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch('/api/stats');
+      let clientId = localStorage.getItem('anomus_client_id');
+      if (!clientId) {
+        clientId = crypto.randomUUID?.() || Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        localStorage.setItem('anomus_client_id', clientId);
+      }
+      const studentName = localStorage.getItem('anomus_student_name') || '';
+      const prn = localStorage.getItem('anomus_student_prn') || '';
+      const params = new URLSearchParams();
+      if (studentName) params.append('studentName', studentName);
+      if (prn) params.append('prn', prn);
+      const queryString = params.toString() ? `?${params.toString()}` : '';
+
+      const res = await fetch(`/api/stats${queryString}`, {
+        headers: {
+          'x-client-id': clientId
+        }
+      });
       if (res.ok) {
         const data = await res.json();
         setStats(data);

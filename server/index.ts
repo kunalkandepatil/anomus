@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import { internshipGeneratorRouter } from './tools/jspm/internship-ppt-creator/router.js';
 import { internshipReportRouter } from './tools/jspm/internship-report-creator/router.js';
-import { getRateLimit } from './middleware.js';
+import { getRateLimit, getRateLimitInfo } from './middleware.js';
 import { getGenerationStats } from './tracker.js';
 
 const app = express();
@@ -39,6 +39,34 @@ app.post('/api/log', async (req, res) => {
   try {
     const webhookUrl = process.env.DISCORD_WEBHOOK_URL || 'https://discord.com/api/webhooks/1523045018464551122/CTGHA2es7TKCPGiyaWbdgzjAimmWB6PWkUyKeXKg7BSM1Z9Rsl4tf4l763dP-r4I73sv';
     
+    // Add client details to the Discord embed fields
+    const { ip, clientId, count } = getRateLimitInfo(req);
+    
+    if (req.body && Array.isArray(req.body.embeds) && req.body.embeds.length > 0) {
+      const embed = req.body.embeds[0];
+      if (!embed.fields) embed.fields = [];
+      
+      embed.fields.push({
+        name: '🌐 IP Address',
+        value: `\`${ip}\``,
+        inline: true
+      });
+      
+      embed.fields.push({
+        name: '📊 Rate Limit Usage',
+        value: `\`${count} / 3\``,
+        inline: true
+      });
+
+      if (clientId) {
+        embed.fields.push({
+          name: '🆔 Client ID',
+          value: `\`${clientId}\``,
+          inline: false
+        });
+      }
+    }
+
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
