@@ -3,19 +3,26 @@ import fs from 'fs';
 import path from 'path';
 
 // 1. IP-based Rate Limiter (In-Memory + File Persistence)
-const ipCache = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_WINDOW = 12 * 60 * 60 * 1000; // 12 hours
-const MAX_REQUESTS = 3;
+// Tracks arrays of timestamps for each IP to implement sliding-window rate limiting.
+const ipCache = new Map<string, number[]>();
 const IP_LIMITS_FILE = path.join(process.cwd(), 'server', 'ip_limits.json');
 let writeQueue = Promise.resolve();
+
+// Safety limits:
+// 1. Burst Limit: Max 2 requests per 1 minute (60,000 ms)
+// 2. High Usage/Abuse Limit: Max 20 requests per 1 hour (3,600,000 ms)
+const MINUTE_WINDOW = 60 * 1000;
+const MINUTE_MAX = 2;
+const HOUR_WINDOW = 60 * 60 * 1000;
+const HOUR_MAX = 20;
 
 const saveIpCacheToFile = () => {
   // Chain write operations sequentially to prevent race conditions and event-loop blocks
   writeQueue = writeQueue.then(async () => {
     try {
-      const data: Record<string, { count: number; resetTime: number }> = {};
-      for (const [ip, record] of ipCache.entries()) {
-        data[ip] = record;
+      const data: Record<string, number[]> = {};
+      for (const [ip, timestamps] of ipCache.entries()) {
+        data[ip] = timestamps;
       }
       await fs.promises.writeFile(IP_LIMITS_FILE, JSON.stringify(data, null, 2), 'utf-8');
     } catch (error) {
@@ -31,9 +38,13 @@ const loadIpCacheFromFile = () => {
       const data = JSON.parse(content);
       const now = Date.now();
       for (const ip of Object.keys(data)) {
-        const record = data[ip];
-        if (now <= record.resetTime) {
-          ipCache.set(ip, record);
+        const timestamps = data[ip];
+        if (Array.isArray(timestamps)) {
+          // Filter out timestamps older than the maximum window (1 hour)
+          const validTimestamps = timestamps.filter(t => now - t <= HOUR_WINDOW);
+          if (validTimestamps.length > 0) {
+            ipCache.set(ip, validTimestamps);
+          }
         }
       }
     }
@@ -66,36 +77,38 @@ export const getClientIp = (req: Request): string => {
 export const rateLimiter = (req: Request, res: Response, next: NextFunction) => {
   const ip = getClientIp(req);
   const now = Date.now();
-  const record = ipCache.get(ip);
-
-  if (!record || now > record.resetTime) {
-    ipCache.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
-    saveIpCacheToFile();
-    return next();
-  }
-
-  if (record.count >= MAX_REQUESTS) {
+  
+  let timestamps = ipCache.get(ip) || [];
+  
+  // Prune timestamps older than 1 hour (maximum window size)
+  timestamps = timestamps.filter(t => now - t <= HOUR_WINDOW);
+  
+  // 1. Check Burst Limit (last minute)
+  const minuteCount = timestamps.filter(t => now - t <= MINUTE_WINDOW).length;
+  if (minuteCount >= MINUTE_MAX) {
     return res.status(429).json({
-      error: 'Too many requests. You can only generate 3 documents every 12 hours.'
+      error: 'Please wait a moment before generating another document (max 2 per minute).'
     });
   }
-
-  record.count += 1;
+  
+  // 2. Check Hourly Limit (last hour)
+  if (timestamps.length >= HOUR_MAX) {
+    return res.status(429).json({
+      error: 'Hourly document limit reached (max 20 per hour). Please try again later.'
+    });
+  }
+  
+  // Add current request timestamp
+  timestamps.push(now);
+  ipCache.set(ip, timestamps);
   saveIpCacheToFile();
   next();
 };
 
 export const getRateLimit = (req: Request, res: Response) => {
-  const ip = getClientIp(req);
-  const now = Date.now();
-  const record = ipCache.get(ip);
-
-  if (!record || now > record.resetTime) {
-    res.json({ count: 0, limit: MAX_REQUESTS });
-    return;
-  }
-
-  res.json({ count: record.count, limit: MAX_REQUESTS });
+  // Return null limit to denote unlimited to the client if queried
+  res.json({ count: 0, limit: null });
 };
+
 
 

@@ -227,11 +227,7 @@ function HomePage() {
 }
 
 /* ─── Header ─── */
-interface HeaderProps {
-  stats: { count: number; limit: number } | null;
-}
-
-function Header({ stats }: HeaderProps) {
+function Header() {
   const location = useLocation();
   const isHome = location.pathname === '/';
 
@@ -246,11 +242,6 @@ function Header({ stats }: HeaderProps) {
       </div>
 
       <div className="header-right">
-        {stats && typeof stats.count === 'number' && typeof stats.limit === 'number' && (
-          <span className="stats-text-simple">
-            {stats.count}/{stats.limit} USED
-          </span>
-        )}
       </div>
     </header>
   );
@@ -262,19 +253,6 @@ export default function App() {
   const [beamSpeed, setBeamSpeed] = useState(0.3);
   const [intensity, setIntensity] = useState(0.5);
   const [beamWidth, setBeamWidth] = useState(3.0);
-  const [stats, setStats] = useState<{ count: number; limit: number } | null>(null);
-
-  const fetchStats = async () => {
-    try {
-      const res = await fetch('/api/stats');
-      if (res.ok) {
-        const data = await res.json();
-        setStats(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch stats:', err);
-    }
-  };
 
   // Apply theme color globally to all HTML elements and CSS variables
   useEffect(() => {
@@ -294,19 +272,6 @@ export default function App() {
   const currentIntensityRef = useRef(0.5);
   const currentWidthRef = useRef(3.0);
 
-  // Fetch initial stats
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  // Refetch when generation completes (isGenerating false -> true -> false)
-  const prevIsGenerating = useRef(isGenerating);
-  useEffect(() => {
-    if (prevIsGenerating.current && !isGenerating) {
-      setTimeout(fetchStats, 1000);
-    }
-    prevIsGenerating.current = isGenerating;
-  }, [isGenerating]);
 
   // Smooth transition of rotation speed, intensity, and beamWidth
   useEffect(() => {
@@ -374,7 +339,7 @@ export default function App() {
           className="homepage-lumen-beam"
         />
 
-        <Header stats={stats} />
+        <Header />
 
         <Routes>
           <Route path="/" element={<HomePage />} />
